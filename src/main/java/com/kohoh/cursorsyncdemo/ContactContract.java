@@ -22,8 +22,10 @@ public class ContactContract implements BaseColumns {
     static final String NAME = "name";
     static final String PHONE = "phone";
 
-    static final String SYNC_SIGNAL = "database://com.kohoh.contactsyncdemo.SYNC_SIGNAL";
-    static final Uri SYNC_SIGNAL_URI = Uri.parse(SYNC_SIGNAL);
+    static final String AUTHORITY = "com.kohoh.cursorsyncdemo";
+    static final Uri BASE_URI = Uri.parse("content://" + AUTHORITY);
+    static final Uri CONTACT_URI = Uri.withAppendedPath(BASE_URI, "contact");
+    static final Uri SYNC_SIGNAL_URI = Uri.withAppendedPath(BASE_URI, "SYNC_SIGNAL_URI");
 
     static public ContactDatabaseHelper getSqliteOpenHelper(Context context) {
         return new ContactDatabaseHelper(context);

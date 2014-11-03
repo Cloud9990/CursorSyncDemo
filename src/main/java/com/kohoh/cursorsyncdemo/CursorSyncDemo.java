@@ -1,9 +1,10 @@
 package com.kohoh.cursorsyncdemo;
 
 import android.app.Activity;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
@@ -14,7 +15,7 @@ import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
-public class CursorSyncDemo extends Activity {
+public class CursorSyncDemo extends Activity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private ListView listView;
     private SimpleCursorAdapter adapter;
@@ -29,22 +30,12 @@ public class CursorSyncDemo extends Activity {
 
         listView = (ListView) findViewById(R.id.lv);
         adapter = new SimpleCursorAdapter(this, R.layout.contact_item, null, from, to,
-                CursorAdapter.FLAG_AUTO_REQUERY);
+                CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
         listView.setAdapter(adapter);
 
-        loadData();
+        getLoaderManager().initLoader(0, null, this);
 
         registerForContextMenu(listView);
-    }
-
-    private void loadData() {
-        SQLiteOpenHelper sqliteOpenHelper = ContactContract.getSqliteOpenHelper(this);
-        SQLiteDatabase database = sqliteOpenHelper.getReadableDatabase();
-        String[] columns = {ContactContract._ID, ContactContract.NAME, ContactContract.PHONE};
-        Cursor cursor = database.query(ContactContract.CONTACT_TABLE, columns, null, null, null,
-                null, null);
-        cursor.setNotificationUri(this.getContentResolver(), ContactContract.SYNC_SIGNAL_URI);
-        adapter.changeCursor(cursor);
     }
 
     @Override
@@ -66,5 +57,21 @@ public class CursorSyncDemo extends Activity {
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.contact_item_menu, menu);
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String[] projection = {ContactContract._ID, ContactContract.NAME, ContactContract.PHONE};
+        return new CursorLoader(this, ContactContract.CONTACT_URI, projection, null, null, null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        adapter.changeCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 }
