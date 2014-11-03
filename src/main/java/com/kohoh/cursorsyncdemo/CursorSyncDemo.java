@@ -1,9 +1,9 @@
 package com.kohoh.cursorsyncdemo;
 
 import android.app.Activity;
-import android.app.LoaderManager;
-import android.content.Loader;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
@@ -14,7 +14,7 @@ import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
-public class CursorSyncDemo extends Activity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class CursorSyncDemo extends Activity {
 
     private ListView listView;
     private SimpleCursorAdapter adapter;
@@ -29,37 +29,22 @@ public class CursorSyncDemo extends Activity implements LoaderManager.LoaderCall
 
         listView = (ListView) findViewById(R.id.lv);
         adapter = new SimpleCursorAdapter(this, R.layout.contact_item, null, from, to,
-                CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+                CursorAdapter.FLAG_AUTO_REQUERY);
         listView.setAdapter(adapter);
-        getLoaderManager().initLoader(0, null, this);
+
+        loadData();
 
         registerForContextMenu(listView);
     }
 
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+    private void loadData() {
+        SQLiteOpenHelper sqliteOpenHelper = ContactContract.getSqliteOpenHelper(this);
+        SQLiteDatabase database = sqliteOpenHelper.getReadableDatabase();
         String[] columns = {ContactContract._ID, ContactContract.NAME, ContactContract.PHONE};
-
-        return new DatabaseLoader(this,
-                ContactContract.getSqliteOpenHelper(this),
-                ContactContract.SYNC_SIGNAL_URI,
-                ContactContract.CONTACT_TABLE,
-                columns,
-                null,
-                null,
-                null,
-                null,
-                null);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        adapter.changeCursor(data);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-
+        Cursor cursor = database.query(ContactContract.CONTACT_TABLE, columns, null, null, null,
+                null, null);
+        cursor.setNotificationUri(this.getContentResolver(), ContactContract.SYNC_SIGNAL_URI);
+        adapter.changeCursor(cursor);
     }
 
     @Override
